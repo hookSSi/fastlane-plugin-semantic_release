@@ -43,7 +43,7 @@ module Fastlane
 
       def self.get_beginning_of_next_sprint(params)
         # command to get first commit
-        git_command = "git rev-list --max-parents=0 HEAD --count"
+        git_command = "git rev-list --max-parents=0 HEAD"
 
         tag = get_last_tag(match: params[:match], debug: params[:debug])
 
@@ -51,7 +51,7 @@ module Fastlane
         if tag.empty?
           UI.message("It couldn't match tag for #{params[:match]}. Check if first commit can be taken as a beginning of next release")
           # If there is no tag found we taking the first commit of current branch
-          hash_lines = Actions.sh("#{git_command}", log: params[:debug]).chomp
+          hash_lines = Actions.sh("#{git_command} --count", log: params[:debug]).chomp
 
           if hash_lines.to_i == 1
             UI.message("First commit of the branch is taken as a begining of next release")
@@ -190,9 +190,9 @@ module Fastlane
       end
 
       def self.is_codepush_friendly(params)
-        git_command = "git rev-list --max-parents=0 HEAD --count"
+        git_command = "git rev-list --max-parents=0 HEAD"
         # Begining of the branch is taken for codepush analysis
-        hash_lines = Actions.sh("#{git_command}", log: params[:debug]).chomp
+        hash_lines = Actions.sh("#{git_command} --count", log: params[:debug]).chomp
         hash = Actions.sh(git_command, log: params[:debug]).chomp
         next_major = 0
         next_minor = 0
