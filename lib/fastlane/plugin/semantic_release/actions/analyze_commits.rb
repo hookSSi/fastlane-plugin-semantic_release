@@ -17,6 +17,28 @@ module Fastlane
       CONVENTIONAL_CHANGELOG_ACTION_FORMAT_PATTERN = :CONVENTIONAL_CHANGELOG_ACTION_FORMAT_PATTERN
     end
 
+    module OS
+        def OS.windows?
+          (/cygwin|mswin|mingw|bccwin|wince|emx/ =~ RUBY_PLATFORM) != nil
+        end
+      
+        def OS.mac?
+         (/darwin/ =~ RUBY_PLATFORM) != nil
+        end
+      
+        def OS.unix?
+          !OS.windows?
+        end
+      
+        def OS.linux?
+          OS.unix? and not OS.mac?
+        end
+      
+        def OS.jruby?
+          RUBY_ENGINE == 'jruby'
+        end
+    end
+
     class AnalyzeCommitsAction < Action
       def self.get_last_tag(params)
         # Try to find the tag
@@ -51,7 +73,11 @@ module Fastlane
         if tag.empty?
           UI.message("It couldn't match tag for #{params[:match]}. Check if first commit can be taken as a beginning of next release")
           # If there is no tag found we taking the first commit of current branch
-          hash_lines = Actions.sh("#{git_command} | wc -l", log: params[:debug]).chomp
+          if not OS.windows?
+            hash_lines = Actions.sh("#{git_command} | wc -l", log: params[:debug]).chomp
+          else
+            hash_lines = Actions.sh("#{git_command} | find /c", log: params[:debug]).chomp
+          end
 
           if hash_lines.to_i == 1
             UI.message("First commit of the branch is taken as a begining of next release")
@@ -192,7 +218,11 @@ module Fastlane
       def self.is_codepush_friendly(params)
         git_command = "git rev-list --max-parents=0 HEAD"
         # Begining of the branch is taken for codepush analysis
-        hash_lines = Actions.sh("#{git_command} | wc -l", log: params[:debug]).chomp
+        if not OS.windows?
+          hash_lines = Actions.sh("#{git_command} | wc -l", log: params[:debug]).chomp
+        else
+          hash_lines = Actions.sh("#{git_command} | find /c", log: params[:debug]).chomp
+        end
         hash = Actions.sh(git_command, log: params[:debug]).chomp
         next_major = 0
         next_minor = 0
